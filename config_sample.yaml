@@ -1,0 +1,23 @@
+appconfig:
+  secret: API_SECRET
+  key: API_KEY
+  port: APP_PORT
+plugnmeet:
+  host: PLUG_N_MEET_SERVER_DOMAIN
+  key: PLUG_N_MEET_API_KEY
+  secret: PLUG_N_MEET_SECRET
+  recording_location: PLUG_N_MEET_RECORDING_LOCATION
+redis:
+  host: REDIS_HOST
+  port: REDIS_PORT
+  username: ""
+  password: ""
+  db: 0
+opencast:
+  host: OPENCAST_HOSTNAME
+  username: OPENCAST_USERNAME
+  password: OPENCAST_PASSWORD
+mongodb:
+  host: MONGODB_HOST
+  database: MONGODB_DATABASE
+  port: MONGODB_PORT
