@@ -15,7 +15,7 @@ export class PlugNMeetTaskService implements OnModuleInit {
     await this.cleanupOldRooms();
     await this.ingestPending();
   }
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async ingestPending() {
     try {
       await this.conferenceService.ingestPendingRecordings();

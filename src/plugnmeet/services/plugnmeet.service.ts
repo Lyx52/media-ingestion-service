@@ -77,11 +77,12 @@ export class PlugNMeetService {
         ended: { $exists: true },
       },
     });
+    if (endedRooms.length <= 0) return;
     const recordings = await this.pnmClient.fetchRecordings({
       room_ids: endedRooms.map((r) => r.roomId),
     });
 
-    if (recordings.status || !recordings.result) {
+    if (!recordings.status || !recordings.result) {
       this.logger.warn(`Failed to fetch PlugNMeet room recordings!`);
       return;
     }
