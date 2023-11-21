@@ -8,13 +8,6 @@ import { File, FormData } from 'formdata-node';
 import { FormDataEncoder } from 'form-data-encoder';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import fetch, { HeadersInit, RequestInit } from 'node-fetch';
-import { ICreateEventMetadata } from '../../common/dto/interfaces/ICreateEventMetadata';
-import {
-  generateAclXML,
-  generateEpisodeCatalogXML,
-  generateEventMetadataJson,
-  getMediaPackageId
-} from "../../common/utils";
 @Injectable()
 export class OpencastApiService implements OnModuleInit {
   private readonly logger: Logger = new Logger(OpencastApiService.name);

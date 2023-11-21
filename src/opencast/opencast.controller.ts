@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Header,
-  HttpCode,
-  Logger,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Logger } from '@nestjs/common';
 
 import { OpencastService } from './services/opencast.service';
 import { EventPattern } from '@nestjs/microservices';

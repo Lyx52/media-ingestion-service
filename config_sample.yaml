@@ -17,6 +17,43 @@ opencast:
   host: OPENCAST_HOSTNAME
   username: OPENCAST_USERNAME
   password: OPENCAST_PASSWORD
+  default_series: PlugNMeet recordings
+  # Copies most of the metadata from series rather than predefined metadata below
+  copy_metadata_from_series: true
+  default_acl: public
+  create_without_series: true
+  event_title_prefix: PlugNMeet recording
+  metadata: {
+    license: 'ALL RIGHTS RESERVED',
+    # This corresponds to Opencast language list entry
+    language: 'en',
+    publishers: [ 'PlugNMeet recorder' ],
+    description: "This is the default description of PlugNMeet recording",
+    location: "PlugNMeet conference",
+    creators: [ "PlugNMeet" ],
+    rights: "",
+    contributors: [ ],
+    subjects: [ ]
+  }
+  # Custom ACL configuration that will be ingested with the event for more information https://docs.opencast.org/r/14.x/developer/#api/types/#acl
+  custom_acl_config: [
+    {
+      "action": "write",
+      "role": "ROLE_ADMIN"
+    },
+    {
+      "action": "read",
+      "role": "ROLE_USER"
+    }
+  ]
+  use_custom_acl_config: true
+  # IMPORTANT: Currently it seems opencast has a bug where it doesn't properly parse json values so all configuration params need to be strings
+  processing_config: {
+    workflow: 'schedule-and-upload',
+    configuration: {
+      'straightToPublishing': 'true'
+    }
+  }
 mongodb:
   host: MONGODB_HOST
   database: MONGODB_DATABASE

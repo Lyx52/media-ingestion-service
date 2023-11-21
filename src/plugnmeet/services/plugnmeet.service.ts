@@ -109,7 +109,7 @@ export class PlugNMeetService {
     return {} as ICreateEventMetadata;
   }
 
-  async removeOldRooms() {
+  async removeAndUpdateRooms() {
     const rooms = await this.pnmClient.getActiveRoomsInfo();
     if (!rooms.status && rooms.rooms === undefined) return;
     const activeIds: string[] = rooms.rooms
