@@ -6,6 +6,7 @@ import { HmacAuthGuard } from './common/middleware/hmac.authguard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: { retryAttempts: 3, retryDelay: 1000 },

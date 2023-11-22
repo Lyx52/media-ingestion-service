@@ -17,7 +17,7 @@ import { IngestJobFinishedDto } from '../common/dto/IngestJobFinishedDto';
 export class PlugNMeetController {
   private readonly logger: Logger = new Logger(PlugNMeetController.name);
   constructor(private readonly conferenceService: PlugNMeetService) {}
-  @Post('/auth/createRoom')
+  @Post('/auth/room/create')
   @HttpCode(200)
   @Header('Cache-Control', 'none')
   async createConferenceRoom(

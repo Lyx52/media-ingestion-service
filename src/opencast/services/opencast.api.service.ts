@@ -7,7 +7,6 @@ import { AttachmentType } from '../dto/enums/AttachmentType';
 import { File, FormData } from 'formdata-node';
 import { FormDataEncoder } from 'form-data-encoder';
 import { fileFromPath } from 'formdata-node/file-from-path';
-import fetch, { HeadersInit, RequestInit } from 'node-fetch';
 @Injectable()
 export class OpencastApiService implements OnModuleInit {
   private readonly logger: Logger = new Logger(OpencastApiService.name);
@@ -43,13 +42,14 @@ export class OpencastApiService implements OnModuleInit {
   private getOptions(
     method: string,
     headers: Headers,
-    formData: any = undefined,
+    formData: Readable = undefined,
   ): RequestInit {
     return {
       headers: headers as unknown as HeadersInit,
-      body: formData,
+      body: formData ? Readable.toWeb(formData) : undefined,
       method: method,
       size: 0,
+      duplex: 'half',
     } as RequestInit;
   }
 

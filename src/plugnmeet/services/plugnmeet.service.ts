@@ -9,6 +9,7 @@ import {
   RoomExtraData,
 } from '../dto/CreateRoomParameters';
 import {
+  OPENCAST_CREATE_DEFAULT_METADATA,
   OPENCAST_INGEST_RECORDINGS,
   PLUG_N_MEET_SERVICE,
 } from '../../app.constants';
@@ -17,6 +18,8 @@ import { IngestRecordingJobDto } from '../../common/dto/IngestRecordingJobDto';
 import * as path from 'path';
 import { ICreateEventMetadata } from '../../common/dto/interfaces/ICreateEventMetadata';
 import { IngestJobFinishedDto } from '../../common/dto/IngestJobFinishedDto';
+import { CreateDefaultEventMetadataDto } from '../../common/dto/CreateDefaultEventMetadataDto';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PlugNMeetService {
@@ -43,10 +46,23 @@ export class PlugNMeetService {
     payload: CreateConferenceDto,
   ): Promise<CreateRoomResponse> {
     const response = await this.pnmClient.createRoom(payload);
-    if (response.status && response.roomInfo) {
+    if (response.status) {
+      let roomInfo: { sid: string } = response.roomInfo;
+      if (!roomInfo) {
+        const activeRoomRes = await this.pnmClient.getActiveRoomInfo({
+          room_id: payload.room_id,
+        });
+        if (!activeRoomRes.status) {
+          this.logger.error(
+            'Could not get room info, ingestion wont be available!',
+          );
+          return response;
+        }
+        roomInfo = activeRoomRes.room.room_info;
+      }
       const entity = this.roomRepository.create();
       entity.roomId = payload.room_id;
-      entity.roomSid = response.roomInfo.sid;
+      entity.roomSid = roomInfo.sid;
       entity.title = payload.metadata.room_title;
       entity.started = new Date();
       entity.ingested = false;
@@ -81,7 +97,17 @@ export class PlugNMeetService {
     const recordings = await this.pnmClient.fetchRecordings({
       room_ids: endedRooms.map((r) => r.roomId),
     });
-
+    if (recordings.msg == 'no recordings found') {
+      // None of the rooms have recordings!
+      return this.roomRepository.updateOne(
+        {
+          where: { roomSid: { $in: endedRooms.map((r) => r.roomId) } },
+        },
+        {
+          $set: { ingested: true },
+        },
+      );
+    }
     if (!recordings.status || !recordings.result) {
       this.logger.warn(`Failed to fetch PlugNMeet room recordings!`);
       return;
@@ -89,7 +115,7 @@ export class PlugNMeetService {
 
     for (const room of endedRooms) {
       const roomRecordings = recordings.result.recordings_list.filter(
-        (rec) => rec.room_sid === room.roomSid,
+        (rec) => rec.room_sid.split('-')[0] === room.roomSid,
       );
       if (roomRecordings.length <= 0) continue;
       const metadata = await this.createEventMetadata(room);
@@ -106,8 +132,19 @@ export class PlugNMeetService {
   async createEventMetadata(
     room: PlugNMeetRoom,
   ): Promise<ICreateEventMetadata> {
-    this.logger.debug(room);
-    return {} as ICreateEventMetadata;
+    const metadata = await firstValueFrom(
+      this.client.send<ICreateEventMetadata>(
+        'createmd',
+        <CreateDefaultEventMetadataDto>{
+          started: room.started,
+          ended: room.ended,
+          title: room.title,
+          seriesName: room.course ? `Course_Series_${room.course}` : undefined,
+        },
+      ),
+    );
+    metadata.location = 'PlugNMeet conference';
+    return metadata;
   }
 
   async removeAndUpdateRooms() {

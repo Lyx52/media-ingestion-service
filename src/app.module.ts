@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PlugNMeetRoom } from './plugnmeet/entities/PlugNMeetRoom';
 import { BullModule } from '@nestjs/bull';
 import { PlugNMeetModule } from './plugnmeet/plugnmeet.module';
+import { OpencastModule } from "./opencast/opencast.module";
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -32,7 +33,7 @@ import { PlugNMeetModule } from './plugnmeet/plugnmeet.module';
       }),
       inject: [ConfigService],
     }),
-    PlugNMeetModule,
+    PlugNMeetModule, OpencastModule
   ],
   controllers: [],
   providers: [],

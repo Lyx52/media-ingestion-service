@@ -24,7 +24,7 @@ export class HmacAuthGuard implements CanActivate {
     return this.authenticate(request);
   }
   authenticate(req: Request): boolean {
-    const providedSignature = req.headers['x-signature'];
+    const providedSignature = req.headers['hash-signature'];
     const providedApiKey = req.headers['api-key'];
     const computedSignature = this.computeSignature(req);
     return (
@@ -33,9 +33,8 @@ export class HmacAuthGuard implements CanActivate {
   }
 
   private computeSignature(req: Request): string {
-    const data = req.method + req.path + JSON.stringify(req.body);
-    return CryptoJS.HmacSHA256(data.toLowerCase(), this.secret).toString(
-      CryptoJS.enc.Hex,
+    return CryptoJS.enc.Hex.stringify(
+      CryptoJS.HmacSHA256(JSON.stringify(req.body), this.secret),
     );
   }
 }
