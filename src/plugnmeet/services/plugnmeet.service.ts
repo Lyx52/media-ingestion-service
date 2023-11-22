@@ -1,17 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import {
-  CreateRoomResponse,
-  DeleteRecordingsParams,
-  PlugNmeet,
-} from 'plugnmeet-sdk-js';
+import { CreateRoomResponse, DeleteRecordingsParams, PlugNmeet } from 'plugnmeet-sdk-js';
 import { MongoRepository } from 'typeorm';
 import { PlugNMeetRoom } from '../entities/PlugNMeetRoom';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import {
-  CreateConferenceDto,
-  RoomExtraData,
-} from '../dto/CreateRoomParameters';
+import { CreateConferenceDto, RoomExtraData } from '../dto/CreateRoomParameters';
 import {
   OPENCAST_CREATE_DEFAULT_METADATA,
   OPENCAST_INGEST_RECORDINGS,
@@ -41,14 +34,10 @@ export class PlugNMeetService {
       this.config.getOrThrow<string>('plugnmeet.key'),
       this.config.getOrThrow<string>('plugnmeet.secret'),
     );
-    this.recordingLocation = this.config.getOrThrow<string>(
-      'plugnmeet.recording_location',
-    );
+    this.recordingLocation = this.config.getOrThrow<string>('plugnmeet.recording_location');
   }
 
-  async createConferenceRoom(
-    payload: CreateConferenceDto,
-  ): Promise<CreateRoomResponse> {
+  async createConferenceRoom(payload: CreateConferenceDto): Promise<CreateRoomResponse> {
     const response = await this.pnmClient.createRoom(payload);
     if (response.status) {
       let roomInfo: { sid: string } = response.roomInfo;
@@ -57,9 +46,7 @@ export class PlugNMeetService {
           room_id: payload.room_id,
         });
         if (!activeRoomRes.status) {
-          this.logger.error(
-            'Could not get room info, ingestion wont be available!',
-          );
+          this.logger.error('Could not get room info, ingestion wont be available!');
           return response;
         }
         roomInfo = activeRoomRes.room.room_info;
@@ -72,15 +59,11 @@ export class PlugNMeetService {
       entity.ingested = false;
       try {
         if (payload.metadata.extra_data) {
-          const extraData: RoomExtraData = JSON.parse(
-            payload.metadata.extra_data,
-          );
+          const extraData: RoomExtraData = JSON.parse(payload.metadata.extra_data);
           entity.course = extraData.activity.course;
         }
       } catch (e) {
-        this.logger.warn(
-          `Failed to parse course ExtraData when creating PlugNMeet Room ${e}`,
-        );
+        this.logger.warn(`Failed to parse course ExtraData when creating PlugNMeet Room ${e}`);
       }
 
       await this.roomRepository.insert(entity);
@@ -132,7 +115,7 @@ export class PlugNMeetService {
           path.resolve(this.recordingLocation, rec.file_path),
         ),
         eventMetadata: metadata,
-        roomSid: room.roomSid,
+        identifiers: room.roomSid,
       });
     }
     await this.roomRepository.updateMany(
@@ -145,16 +128,14 @@ export class PlugNMeetService {
     );
   }
 
-  async createEventMetadata(
-    room: PlugNMeetRoom,
-  ): Promise<ICreateEventMetadata> {
+  async createEventMetadata(room: PlugNMeetRoom): Promise<ICreateEventMetadata> {
     const metadata = await firstValueFrom(
       this.client.send<ICreateEventMetadata, CreateDefaultEventMetadataDto>(
         OPENCAST_CREATE_DEFAULT_METADATA,
         {
           started: room.started,
           ended: room.ended,
-          title: room.title,
+          title: `PlugNMeet recording ${room.title}`,
           seriesName: room.course ? `Course_Series_${room.course}` : undefined,
         },
       ),
@@ -194,9 +175,7 @@ export class PlugNMeetService {
             record_id: rec.record_id,
           },
       );
-      await Promise.all(
-        recordingIds.map((params) => this.pnmClient.deleteRecordings(params)),
-      );
+      await Promise.all(recordingIds.map((params) => this.pnmClient.deleteRecordings(params)));
     }
 
     // Delete any rooms that are already ended AND ingested
@@ -207,10 +186,10 @@ export class PlugNMeetService {
   }
 
   async ingestJobFinished(data: IngestJobFinishedDto): Promise<void> {
-    if (data.roomSid) {
+    if (data.identifiers) {
       await this.roomRepository.updateMany(
         {
-          roomSid: data.roomSid,
+          roomSid: data.identifiers,
         },
         {
           $set: { ingested: true },

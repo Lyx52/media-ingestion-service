@@ -2,6 +2,10 @@ appconfig:
   secret: API_SECRET
   key: API_KEY
   port: APP_PORT
+epiphan:
+  recording_location: EPIPHAN_RECORDING_LOCATION
+  workdir_location: EPIPHAN_WORKING_DIRECTORY_LOCATION
+  archive_location: EPIPHAN_ARCHIVED_RECORDING_LOCATION
 plugnmeet:
   host: PLUG_N_MEET_SERVER_DOMAIN
   key: PLUG_N_MEET_API_KEY

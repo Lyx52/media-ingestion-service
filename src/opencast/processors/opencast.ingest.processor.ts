@@ -4,11 +4,7 @@ import { Job } from 'bull';
 import { INGEST_RECORDING_JOB } from '../../app.constants';
 import { IngestRecordingJobDto } from '../../common/dto/IngestRecordingJobDto';
 import { OpencastApiService } from '../services/opencast.api.service';
-import {
-  generateAclXML,
-  generateEpisodeCatalogXML,
-  getMediaPackageId,
-} from '../../common/utils';
+import { generateAclXML, generateEpisodeCatalogXML, getMediaPackageId } from '../../common/utils';
 import { ConfigService } from '@nestjs/config';
 import { IngestJobFinishedDto } from '../../common/dto/IngestJobFinishedDto';
 import { IProcessingConfiguration } from '../../common/dto/interfaces/IProcessingConfiguration';
@@ -19,9 +15,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
   private readonly defaultAclName?: string;
   private readonly customAclConfig?: any[];
   private readonly workflowConfig: IProcessingConfiguration;
-  private readonly logger: Logger = new Logger(
-    OpencastVideoIngestConsumer.name,
-  );
+  private readonly logger: Logger = new Logger(OpencastVideoIngestConsumer.name);
   async onModuleInit() {}
   constructor(
     private readonly opencastApi: OpencastApiService,
@@ -64,9 +58,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
       if (this.customAclConfig && this.customAclConfig.length > 0) {
         aclXML = generateAclXML(this.customAclConfig, mediaPackageId);
       } else if (this.defaultAclName) {
-        const aclTemplate = await this.opencastApi.getAccessListTemplate(
-          this.defaultAclName,
-        );
+        const aclTemplate = await this.opencastApi.getAccessListTemplate(this.defaultAclName);
         aclXML = generateAclXML(aclTemplate.acl.ace, mediaPackageId);
       } else {
         await job.moveToCompleted(
@@ -96,9 +88,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
           );
           totalIngested++;
         } else {
-          this.logger.warn(
-            `Failed to ingest recording, videofile ${recording} does not exist!`,
-          );
+          this.logger.warn(`Failed to ingest recording, videofile ${recording} does not exist!`);
         }
       }
       if (totalIngested <= 0) {
@@ -110,15 +100,12 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
         );
         return;
       }
-      const success = await this.opencastApi.ingest(
-        mediaPackage,
-        this.workflowConfig.workflow,
-      );
+      const success = await this.opencastApi.ingest(mediaPackage, this.workflowConfig.workflow);
       await job.moveToCompleted(
         JSON.stringify(<IngestJobFinishedDto>{
           success: success,
           eventId: mediaPackageId,
-          roomSid: data.roomSid,
+          identifiers: data.identifiers,
         }),
       );
       return;
@@ -137,9 +124,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
   async onJobCompleted(job: Job, result: any) {
     // Wtf?! string of a string of a json
     const resultDto: IngestJobFinishedDto = JSON.parse(JSON.parse(result));
-    this.logger.verbose(
-      `VideoQueue Job completed: ${JSON.stringify(resultDto)}`,
-    );
+    this.logger.verbose(`VideoQueue Job completed: ${JSON.stringify(resultDto)}`);
     await this.opencast.jobFinished(resultDto);
   }
 }

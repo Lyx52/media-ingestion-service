@@ -4,7 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PlugNMeetRoom } from './plugnmeet/entities/PlugNMeetRoom';
 import { BullModule } from '@nestjs/bull';
 import { PlugNMeetModule } from './plugnmeet/plugnmeet.module';
-import { OpencastModule } from "./opencast/opencast.module";
+import { OpencastModule } from './opencast/opencast.module';
+import { EpiphanModule } from './epiphan/epiphan.module';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -33,7 +34,9 @@ import { OpencastModule } from "./opencast/opencast.module";
       }),
       inject: [ConfigService],
     }),
-    PlugNMeetModule, OpencastModule
+    PlugNMeetModule,
+    OpencastModule,
+    EpiphanModule,
   ],
   controllers: [],
   providers: [],

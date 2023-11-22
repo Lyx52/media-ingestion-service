@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Header,
-  HttpCode,
-  Logger,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Header, HttpCode, Logger, Post } from '@nestjs/common';
 import { CreateConferenceDto } from './dto/CreateRoomParameters';
 import { CreateRoomResponse } from 'plugnmeet-sdk-js';
 import { PlugNMeetService } from './services/plugnmeet.service';
@@ -20,14 +13,12 @@ export class PlugNMeetController {
   @Post('/auth/room/create')
   @HttpCode(200)
   @Header('Cache-Control', 'none')
-  async createConferenceRoom(
-    @Body() payload: CreateConferenceDto,
-  ): Promise<CreateRoomResponse> {
+  async createConferenceRoom(@Body() payload: CreateConferenceDto): Promise<CreateRoomResponse> {
     return this.conferenceService.createConferenceRoom(payload);
   }
 
   @EventPattern(INGEST_RECORDINGS_JOB_FINISHED)
-  async opencastIngestRecordings(@Body() data: IngestJobFinishedDto) {
+  async plugnmeetRecordingsIngested(@Body() data: IngestJobFinishedDto) {
     if (data.success) {
       return this.conferenceService.ingestJobFinished(data);
     }

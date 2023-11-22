@@ -1,10 +1,4 @@
-import {
-  IsNotEmpty,
-  IsNotEmptyObject,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { LockSettingsParams, RoomFeaturesParams } from 'plugnmeet-sdk-js';
 
 export class CreateConferenceDto {

@@ -28,9 +28,7 @@ export class PlugNMeetTaskService implements OnModuleInit {
     try {
       await this.conferenceService.removeAndUpdateRooms();
     } catch (e) {
-      this.logger.verbose(
-        `Caught exception while syncing conference rooms ${e}`,
-      );
+      this.logger.verbose(`Caught exception while syncing conference rooms ${e}`);
     }
   }
 }

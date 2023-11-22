@@ -1,6 +1,6 @@
 export class IngestJobFinishedDto {
   eventId?: string;
   msg?: string;
-  roomSid?: string;
+  identifiers?: any;
   success: boolean;
 }
