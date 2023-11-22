@@ -18,7 +18,7 @@ export class OpencastController {
     return this.opencastService.addIngestJob(data);
   }
 
-  @MessagePattern('createmd')
+  @MessagePattern(OPENCAST_CREATE_DEFAULT_METADATA)
   async opencastCreateDefaultEventMetadata(
     @Body() data: CreateDefaultEventMetadataDto,
   ) {

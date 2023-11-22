@@ -1,5 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CreateRoomResponse, PlugNmeet } from 'plugnmeet-sdk-js';
+import {
+  CreateRoomResponse,
+  DeleteRecordingsParams,
+  PlugNmeet,
+} from 'plugnmeet-sdk-js';
 import { MongoRepository } from 'typeorm';
 import { PlugNMeetRoom } from '../entities/PlugNMeetRoom';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -99,25 +103,29 @@ export class PlugNMeetService {
     });
     if (recordings.msg == 'no recordings found') {
       // None of the rooms have recordings!
-      return this.roomRepository.updateOne(
+      await this.roomRepository.updateMany(
         {
-          where: { roomSid: { $in: endedRooms.map((r) => r.roomId) } },
+          roomSid: { $in: endedRooms.map((r) => r.roomSid) },
         },
         {
           $set: { ingested: true },
         },
       );
+      return;
     }
     if (!recordings.status || !recordings.result) {
       this.logger.warn(`Failed to fetch PlugNMeet room recordings!`);
       return;
     }
-
+    const noRecordingIds = [];
     for (const room of endedRooms) {
       const roomRecordings = recordings.result.recordings_list.filter(
         (rec) => rec.room_sid.split('-')[0] === room.roomSid,
       );
-      if (roomRecordings.length <= 0) continue;
+      if (roomRecordings.length <= 0) {
+        noRecordingIds.push(room.roomSid);
+        continue;
+      }
       const metadata = await this.createEventMetadata(room);
       this.client.emit(OPENCAST_INGEST_RECORDINGS, <IngestRecordingJobDto>{
         recordings: roomRecordings.map((rec) =>
@@ -127,15 +135,23 @@ export class PlugNMeetService {
         roomSid: room.roomSid,
       });
     }
+    await this.roomRepository.updateMany(
+      {
+        roomSid: { $in: noRecordingIds },
+      },
+      {
+        $set: { ingested: true },
+      },
+    );
   }
 
   async createEventMetadata(
     room: PlugNMeetRoom,
   ): Promise<ICreateEventMetadata> {
     const metadata = await firstValueFrom(
-      this.client.send<ICreateEventMetadata>(
-        'createmd',
-        <CreateDefaultEventMetadataDto>{
+      this.client.send<ICreateEventMetadata, CreateDefaultEventMetadataDto>(
+        OPENCAST_CREATE_DEFAULT_METADATA,
+        {
           started: room.started,
           ended: room.ended,
           title: room.title,
@@ -148,9 +164,9 @@ export class PlugNMeetService {
   }
 
   async removeAndUpdateRooms() {
-    const rooms = await this.pnmClient.getActiveRoomsInfo();
-    if (!rooms.status && rooms.rooms === undefined) return;
-    const activeIds: string[] = rooms.rooms
+    const activeRooms = await this.pnmClient.getActiveRoomsInfo();
+    if (!activeRooms.status && activeRooms.rooms === undefined) return;
+    const activeIds: string[] = activeRooms.rooms
       .filter((rm) => rm.room_info.is_running)
       .map((rm) => rm.room_info.sid);
 
@@ -159,6 +175,29 @@ export class PlugNMeetService {
       { roomSid: { $nin: activeIds }, ended: { $exists: false } },
       { $set: { ended: new Date() } },
     );
+    const rooms = await this.roomRepository.find({
+      where: {
+        ended: { $exists: true },
+        ingested: true,
+      },
+    });
+    if (rooms.length <= 0) return;
+    // Delete recordings
+    const roomIds = rooms.map((r) => r.roomId);
+    const recordings = await this.pnmClient.fetchRecordings({
+      room_ids: roomIds,
+    });
+    if (recordings.status) {
+      const recordingIds = recordings.result.recordings_list.map(
+        (rec) =>
+          <DeleteRecordingsParams>{
+            record_id: rec.record_id,
+          },
+      );
+      await Promise.all(
+        recordingIds.map((params) => this.pnmClient.deleteRecordings(params)),
+      );
+    }
 
     // Delete any rooms that are already ended AND ingested
     await this.roomRepository.deleteMany({
@@ -169,14 +208,15 @@ export class PlugNMeetService {
 
   async ingestJobFinished(data: IngestJobFinishedDto): Promise<void> {
     if (data.roomSid) {
-      await this.roomRepository.updateOne(
+      await this.roomRepository.updateMany(
         {
-          where: { roomSid: data.roomSid },
+          roomSid: data.roomSid,
         },
         {
           $set: { ingested: true },
         },
       );
+      return;
     }
     this.logger.warn(`No roomSid provided for event ${data.eventId}!`);
   }

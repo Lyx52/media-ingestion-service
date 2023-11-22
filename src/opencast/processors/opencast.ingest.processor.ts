@@ -1,5 +1,5 @@
 import { Logger, OnModuleInit } from '@nestjs/common';
-import { OnQueueCompleted, Process, Processor } from '@nestjs/bull';
+import { OnGlobalQueueCompleted, Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { INGEST_RECORDING_JOB } from '../../app.constants';
 import { IngestRecordingJobDto } from '../../common/dto/IngestRecordingJobDto';
@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { IngestJobFinishedDto } from '../../common/dto/IngestJobFinishedDto';
 import { IProcessingConfiguration } from '../../common/dto/interfaces/IProcessingConfiguration';
 import * as fs from 'fs';
+import { OpencastService } from '../services/opencast.service';
 @Processor('video')
 export class OpencastVideoIngestConsumer implements OnModuleInit {
   private readonly defaultAclName?: string;
@@ -24,6 +25,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
   async onModuleInit() {}
   constructor(
     private readonly opencastApi: OpencastApiService,
+    private readonly opencast: OpencastService,
     private readonly config: ConfigService,
   ) {
     this.defaultAclName = this.config.get<string>('opencast.default_acl');
@@ -37,12 +39,13 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
     const { data } = job;
     this.logger.verbose('Started INGEST_RECORDING_JOB');
     if (data.recordings.length <= 0) {
-      return job.moveToCompleted(
+      await job.moveToCompleted(
         JSON.stringify(<IngestJobFinishedDto>{
           success: false,
           msg: 'Ingest job failed because no recordings were found!',
         }),
       );
+      return;
     }
     try {
       let mediaPackage = await this.opencastApi.createMediaPackage();
@@ -66,12 +69,13 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
         );
         aclXML = generateAclXML(aclTemplate.acl.ace, mediaPackageId);
       } else {
-        return job.moveToCompleted(
+        await job.moveToCompleted(
           JSON.stringify(<IngestJobFinishedDto>{
             success: false,
             msg: 'Cannot create event because ACL is not configured!',
           }),
         );
+        return;
       }
 
       mediaPackage = await this.opencastApi.addAttachment(
@@ -98,37 +102,44 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
         }
       }
       if (totalIngested <= 0) {
-        return job.moveToCompleted(
+        await job.moveToCompleted(
           JSON.stringify(<IngestJobFinishedDto>{
             success: false,
             msg: `Ingest job failed because couldn't add any tracks!`,
           }),
         );
+        return;
       }
       const success = await this.opencastApi.ingest(
         mediaPackage,
         this.workflowConfig.workflow,
       );
-      return job.moveToCompleted(
+      await job.moveToCompleted(
         JSON.stringify(<IngestJobFinishedDto>{
           success: success,
           eventId: mediaPackageId,
           roomSid: data.roomSid,
         }),
       );
+      return;
     } catch (e) {
-      return job.moveToCompleted(
+      await job.moveToCompleted(
         JSON.stringify(<IngestJobFinishedDto>{
           success: false,
           msg: `Ingest job failed with exception ${e}!`,
         }),
       );
+      return;
     }
   }
 
-  @OnQueueCompleted()
+  @OnGlobalQueueCompleted()
   async onJobCompleted(job: Job, result: any) {
-    this.logger.debug(job);
-    this.logger.debug(result);
+    // Wtf?! string of a string of a json
+    const resultDto: IngestJobFinishedDto = JSON.parse(JSON.parse(result));
+    this.logger.verbose(
+      `VideoQueue Job completed: ${JSON.stringify(resultDto)}`,
+    );
+    await this.opencast.jobFinished(resultDto);
   }
 }

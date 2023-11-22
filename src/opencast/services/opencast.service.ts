@@ -32,6 +32,7 @@ export class OpencastService implements OnModuleInit {
   async addIngestJob(data: IngestRecordingJobDto): Promise<void> {
     await this.ingestQueue.add(INGEST_RECORDING_JOB, data);
   }
+
   async createDefaultEventMetadata(
     data: CreateDefaultEventMetadataDto,
   ): Promise<ICreateEventMetadata> {
@@ -72,6 +73,7 @@ export class OpencastService implements OnModuleInit {
       title: `${event_title_prefix} '${data.title}'`,
     } as ICreateEventMetadata;
   }
+
   async jobFinished(data: IngestJobFinishedDto): Promise<void> {
     await this.client.emit(INGEST_RECORDINGS_JOB_FINISHED, data);
   }

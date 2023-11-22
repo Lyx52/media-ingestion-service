@@ -31,5 +31,6 @@ export class PlugNMeetController {
     if (data.success) {
       return this.conferenceService.ingestJobFinished(data);
     }
+    this.logger.error(`Ingest job failed with message: '${data.msg}'`);
   }
 }
