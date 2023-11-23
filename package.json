@@ -1,10 +1,10 @@
 {
   "name": "media-ingestion-service",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "version": "1.0.0",
+  "description": "Opencast automatic video recording ingestion service.",
+  "author": "Ikars Melnalksnis",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "main": "./dist/main.js",
   "scripts": {
     "build": "nest build",
