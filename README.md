@@ -2,8 +2,9 @@
 * Opencast automatic video recording ingestion service. Currently supported video automatic recording uploads from:
     - Epiphan
     - [PlugNMeet](https://github.com/mynaparrot/plugNmeet-server)
-
-## Installation and running the application
+## Pre-requisites
+You will need to add workflows (In **workflow** directory) to your opencast configuration to support multiple video combining
+# Installation and running the application
 Clone repository
 ```bash
 $ git clone https://github.com/Lyx52/media-ingestion-service.git

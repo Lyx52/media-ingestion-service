@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition xmlns="http://workflow.opencastproject.org">
+  <id>lbtu-wf-combine</id>
+  <title>Concatenate 'presenter-X/part' videos into 'presenter/source'</title>
+  <operations>
+	<!-- Combine all presenter-X/source videos into one -->
+    <operation
+      id="concat"
+      description="Concatenate 'presenter' videos, can process up to 20 videos (ALL VIDEOS MUST BE SAME CODEC)!">
+      <configurations>
+        <configuration key="source-flavor-part-0">presenter-0/part</configuration>
+		<configuration key="source-flavor-part-1">presenter-1/part</configuration>
+		<configuration key="source-flavor-part-2">presenter-2/part</configuration>
+		<configuration key="source-flavor-part-3">presenter-3/part</configuration>
+		<configuration key="source-flavor-part-4">presenter-4/part</configuration>
+		<configuration key="source-flavor-part-5">presenter-5/part</configuration>
+		<configuration key="source-flavor-part-6">presenter-6/part</configuration>
+		<configuration key="source-flavor-part-7">presenter-7/part</configuration>
+		<configuration key="source-flavor-part-8">presenter-8/part</configuration>
+		<configuration key="source-flavor-part-9">presenter-9/part</configuration>
+	
+        	<configuration key="source-flavor-part-0-mandatory">true</configuration>
+		<configuration key="source-flavor-part-1-mandatory">false</configuration>
+		<configuration key="source-flavor-part-2-mandatory">false</configuration>
+		<configuration key="source-flavor-part-3-mandatory">false</configuration>
+		<configuration key="source-flavor-part-4-mandatory">false</configuration>
+		<configuration key="source-flavor-part-5-mandatory">false</configuration>
+		<configuration key="source-flavor-part-6-mandatory">false</configuration>
+		<configuration key="source-flavor-part-7-mandatory">false</configuration>
+		<configuration key="source-flavor-part-8-mandatory">false</configuration>
+		<configuration key="source-flavor-part-9-mandatory">false</configuration>
+		
+		<configuration key="target-flavor">presenter/source</configuration>
+		<configuration key="target-tags">combined,archive</configuration>
+		<configuration key="encoding-profile">concat.work</configuration>
+		<configuration key="output-resolution">part-0</configuration>
+		<configuration key="output-framerate">part-0</configuration>
+		<configuration key="same-codec">true</configuration>
+      </configurations>
+    </operation>
+	
+	<!-- Remove source files from archive -->
+	
+	<operation
+		id="tag"
+		description="Remove source files from archive">
+		<configurations>
+		<configuration key="source-flavors">*/part</configuration>
+		<configuration key="target-tags">-archive</configuration>
+		</configurations>
+	</operation>
+  </operations>
+</definition>
