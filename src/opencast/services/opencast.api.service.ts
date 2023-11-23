@@ -28,9 +28,7 @@ export class OpencastApiService implements OnModuleInit {
     const headers = new Headers();
     headers.append(
       'Authorization',
-      `Basic ${Buffer.from(`${this.username}:${this.password}`).toString(
-        'base64',
-      )}`,
+      `Basic ${Buffer.from(`${this.username}:${this.password}`).toString('base64')}`,
     );
     headers.append('X-API-AS-USER', this.username);
     if (roles.length > 0) {
@@ -65,9 +63,9 @@ export class OpencastApiService implements OnModuleInit {
     }
 
     throw Error(
-      `Failed to create media package, request failed with status code ${
-        res.status
-      }, ${content || ''}`,
+      `Failed to create media package, request failed with status code ${res.status}, ${
+        content || ''
+      }`,
     );
   }
   async addDCCatalog(mediaPackage: string, dublinCore: string, flavor: string) {
@@ -80,18 +78,9 @@ export class OpencastApiService implements OnModuleInit {
     return this.addFile(mediaPackage, track, flavor, AttachmentType.TRACK);
   }
 
-  async addAttachment(
-    mediaPackage: string,
-    attachmentXML: string,
-    flavor: string,
-  ) {
+  async addAttachment(mediaPackage: string, attachmentXML: string, flavor: string) {
     const attachment = new File([attachmentXML], 'attachment.xml');
-    return this.addFile(
-      mediaPackage,
-      attachment,
-      flavor,
-      AttachmentType.ATTACHMENT,
-    );
+    return this.addFile(mediaPackage, attachment, flavor, AttachmentType.ATTACHMENT);
   }
 
   private async addFile(
@@ -126,18 +115,15 @@ export class OpencastApiService implements OnModuleInit {
         url += '/ingest/addTrack';
         break;
     }
-    const res = await fetch(
-      url,
-      this.getOptions('POST', headers, Readable.from(encoder)),
-    );
+    const res = await fetch(url, this.getOptions('POST', headers, Readable.from(encoder)));
     const content = await res.text();
     if (res.ok) {
       return content;
     }
     throw Error(
-      `Failed to add ${type} to media package, request failed with status code ${
-        res.status
-      }, ${content || ''}`,
+      `Failed to add ${type} to media package, request failed with status code ${res.status}, ${
+        content || ''
+      }`,
     );
   }
 
@@ -260,9 +246,7 @@ export class OpencastApiService implements OnModuleInit {
 
   async getAccessListTemplate(name: string): Promise<any> {
     const ACLs = await this.getAccessListTemplates();
-    return ACLs.find(
-      (acl: any) => acl.name.toLowerCase() === name.toLowerCase(),
-    );
+    return ACLs.find((acl: any) => acl.name.toLowerCase() === name.toLowerCase());
   }
 
   async getAccessListTemplates(): Promise<any> {
@@ -275,9 +259,7 @@ export class OpencastApiService implements OnModuleInit {
     if (res.ok) {
       return await res.json();
     }
-    throw Error(
-      `Failed to get ACLs, request failed with status code ${res.status}!`,
-    );
+    throw Error(`Failed to get ACLs, request failed with status code ${res.status}!`);
   }
 
   async getSeries(title: string): Promise<any | undefined> {
@@ -292,8 +274,6 @@ export class OpencastApiService implements OnModuleInit {
       if (series.length > 0) return series[0];
       return undefined;
     }
-    throw Error(
-      `Failed to get series ${title}, request failed with status code ${res.status}!`,
-    );
+    throw Error(`Failed to get series ${title}, request failed with status code ${res.status}!`);
   }
 }

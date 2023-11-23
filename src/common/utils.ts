@@ -60,9 +60,7 @@ export const generateEventMetadataJson = (data: ICreateEventMetadata): any => {
   ];
 };
 
-export const generateEventMetadataObject = (
-  data: ICreateEventMetadata,
-): any => {
+export const generateEventMetadataObject = (data: ICreateEventMetadata): any => {
   return {
     created: data.started,
     temporal: {
@@ -84,12 +82,9 @@ export const generateEventMetadataObject = (
   };
 };
 
-export const getAttributeByName = (
-  documentNode: XMLBuilder,
-  name: string,
-): string | undefined => {
-  const attribs: NamedNodeMap = (documentNode.node as any)._attributeList;
-  const attrib = attribs.getNamedItem(name);
+export const getAttributeByName = (documentNode: XMLBuilder, name: string): string | undefined => {
+  const attribs: NamedNodeMap = (documentNode?.node as any)?._attributeList;
+  const attrib = attribs?.getNamedItem(name);
   return attrib?.value;
 };
 
@@ -98,16 +93,12 @@ export const getMediaPackageId = (mediaPackage: string): string => {
   return getAttributeByName(document.root(), 'id') || '';
 };
 
-export const generateAclXML = (
-  roles: any[],
-  mediaPackageId: string,
-): string => {
+export const generateAclXML = (roles: any[], mediaPackageId: string): string => {
   const document = create({ version: '1.0', encoding: 'UTF-8' });
   const root = document.ele('dublincore', {
     PolicyId: mediaPackageId || 'mediapackage-1',
     Version: '2.0',
-    RuleCombiningAlgId:
-      'urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:permit-overrides',
+    RuleCombiningAlgId: 'urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:permit-overrides',
     xmlns: 'urn:oasis:names:tc:xacml:2.0:policy:schema:os',
   });
 
@@ -161,9 +152,7 @@ export const generateAclXML = (
   return document.end({ prettyPrint: true, allowEmptyTags: true }).toString();
 };
 
-export const generateEpisodeCatalogXML = (
-  data: ICreateEventMetadata,
-): string => {
+export const generateEpisodeCatalogXML = (data: ICreateEventMetadata): string => {
   const document = create({
     version: '1.0',
     encoding: 'UTF-8',

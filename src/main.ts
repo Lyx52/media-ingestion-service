@@ -17,9 +17,7 @@ async function bootstrap() {
     throw new Error('Invalid or no api key and secret provided!');
 
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(
-    new HmacAuthGuard(cfg.appconfig.secret, cfg.appconfig.key, reflector),
-  );
+  app.useGlobalGuards(new HmacAuthGuard(cfg.appconfig.secret, cfg.appconfig.key, reflector));
 
   if (!cfg.appconfig.port) throw new Error('Invalid or no port provided!');
   await app.startAllMicroservices();

@@ -13,9 +13,7 @@ import { PLUG_N_MEET_SERVICE } from '../app.constants';
 @Module({
   imports: [
     TypeOrmModule.forFeature([PlugNMeetRoom]),
-    ClientsModule.register([
-      { name: PLUG_N_MEET_SERVICE, transport: Transport.TCP },
-    ]),
+    ClientsModule.register([{ name: PLUG_N_MEET_SERVICE, transport: Transport.TCP }]),
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({ load: [config] }),
   ],

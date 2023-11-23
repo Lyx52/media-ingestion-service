@@ -7,9 +7,9 @@ import {
 } from '../../app.constants';
 import { ClientProxy } from '@nestjs/microservices';
 import * as fs from 'fs';
-import fsAsync from 'fs/promises';
+import * as fsAsync from 'fs/promises';
 import * as fse from 'fs-extra';
-import path from 'path';
+import * as path from 'path';
 import { IngestJobFinishedDto } from '../../common/dto/IngestJobFinishedDto';
 import { IngestRecordingJobDto } from '../../common/dto/IngestRecordingJobDto';
 import { ICreateEventMetadata } from '../../common/dto/interfaces/ICreateEventMetadata';
@@ -31,7 +31,7 @@ export class EpiphanService implements OnModuleInit {
     this.recordingLocation = path.resolve(
       this.config.getOrThrow<string>('epiphan.recording_location'),
     );
-    this.seriesName = path.resolve(this.config.getOrThrow<string>('epiphan.series_name'));
+    this.seriesName = this.config.getOrThrow<string>('epiphan.series_name');
   }
   async onModuleInit() {
     if (!fs.existsSync(this.recordingLocation)) {
@@ -84,18 +84,19 @@ export class EpiphanService implements OnModuleInit {
   async parseRecordingDate(filePath: string): Promise<Date> {
     const fileInfo = await fsAsync.stat(filePath);
     const fileName = path.parse(filePath).name;
-    const parts = fileName.split('_');
-    const videoDateStr = `${parts[1]}-${fileInfo.atime.getFullYear()} ${parts[2].replace(
-      /-/g,
-      ':',
-    )}`;
-    if (isNaN(Date.parse(videoDateStr))) {
+    try {
+      const parts = fileName.split('_');
+      const videoDateStr = `${parts[1]}-${fileInfo.atime.getFullYear()} ${parts[2].replace(
+        /-/g,
+        ':',
+      )}`;
+      return new Date(videoDateStr);
+    } catch (e) {
       this.logger.warn(
         `Could not parse epiphan recording ${fileName} creation date, using current time!`,
       );
       return new Date();
     }
-    return new Date(videoDateStr);
   }
 
   async ingestPendingRecordings() {

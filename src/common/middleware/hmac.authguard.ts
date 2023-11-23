@@ -10,14 +10,9 @@ export class HmacAuthGuard implements CanActivate {
     private readonly key: string,
     private readonly reflector: Reflector,
   ) {}
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     // Handle public routes
-    const isPublic = this.reflector.get<boolean>(
-      'isPublic',
-      context.getHandler(),
-    );
+    const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler());
     if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest();
@@ -27,14 +22,10 @@ export class HmacAuthGuard implements CanActivate {
     const providedSignature = req.headers['hash-signature'];
     const providedApiKey = req.headers['api-key'];
     const computedSignature = this.computeSignature(req);
-    return (
-      providedSignature === computedSignature && providedApiKey === this.key
-    );
+    return providedSignature === computedSignature && providedApiKey === this.key;
   }
 
   private computeSignature(req: Request): string {
-    return CryptoJS.enc.Hex.stringify(
-      CryptoJS.HmacSHA256(JSON.stringify(req.body), this.secret),
-    );
+    return CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA256(JSON.stringify(req.body), this.secret));
   }
 }

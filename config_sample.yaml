@@ -4,8 +4,9 @@ appconfig:
   port: APP_PORT
 epiphan:
   recording_location: EPIPHAN_RECORDING_LOCATION
-  workdir_location: EPIPHAN_WORKING_DIRECTORY_LOCATION
-  archive_location: EPIPHAN_ARCHIVED_RECORDING_LOCATION
+  workdir_location: './workdir'
+  archive_location: './archive'
+  series_name: 'Epiphan recordings'
 plugnmeet:
   host: PLUG_N_MEET_SERVER_DOMAIN
   key: PLUG_N_MEET_API_KEY

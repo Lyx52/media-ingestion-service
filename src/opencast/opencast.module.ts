@@ -19,9 +19,7 @@ import { OpencastController } from './opencast.controller';
       },
     }),
     ConfigModule.forRoot({ load: [config] }),
-    ClientsModule.register([
-      { name: OPENCAST_SERVICE, transport: Transport.TCP },
-    ]),
+    ClientsModule.register([{ name: OPENCAST_SERVICE, transport: Transport.TCP }]),
   ],
   providers: [OpencastVideoIngestConsumer, OpencastService, OpencastApiService],
   controllers: [OpencastController],

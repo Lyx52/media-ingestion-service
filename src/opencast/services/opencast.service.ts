@@ -36,21 +36,16 @@ export class OpencastService implements OnModuleInit {
   async createDefaultEventMetadata(
     data: CreateDefaultEventMetadataDto,
   ): Promise<ICreateEventMetadata> {
-    const { metadata, processing_config, default_acl, default_series } =
-      this.opencastConfig;
+    const { metadata, processing_config, default_acl, default_series } = this.opencastConfig;
 
-    const series = await this.opencastApi.getSeries(
-      data.seriesName || default_series,
-    );
+    const series = await this.opencastApi.getSeries(data.seriesName || default_series);
     return {
       location: metadata.location,
       aclName: default_acl,
       contributors: series?.contributors
         ? metadata.contributors.concat(series.contributors)
         : metadata.contributors,
-      creators: series?.creators
-        ? metadata.creators.concat(series.creators)
-        : metadata.creators,
+      creators: series?.creators ? metadata.creators.concat(series.creators) : metadata.creators,
       description: metadata.description,
       lang: series?.language,
       license: series?.license,
@@ -62,9 +57,7 @@ export class OpencastService implements OnModuleInit {
       seriesId: series?.identifier || '',
       started: data.started,
       ended: data.ended || new Date(),
-      subjects: series?.subjects
-        ? metadata.subjects.concat(series.subjects)
-        : metadata.subjects,
+      subjects: series?.subjects ? metadata.subjects.concat(series.subjects) : metadata.subjects,
       title: data.title,
     } as ICreateEventMetadata;
   }
