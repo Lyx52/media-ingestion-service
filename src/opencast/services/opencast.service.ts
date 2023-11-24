@@ -30,6 +30,7 @@ export class OpencastService implements OnModuleInit {
   async onModuleInit() {}
 
   async addIngestJob(data: IngestRecordingJobDto): Promise<void> {
+    this.logger.log('Adding INGEST_RECORDING_JOB to job queue.');
     await this.ingestQueue.add(INGEST_RECORDING_JOB, data);
   }
 

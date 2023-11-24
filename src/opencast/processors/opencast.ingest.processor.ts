@@ -37,6 +37,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
         JSON.stringify(<IngestJobFinishedDto>{
           success: false,
           msg: 'Ingest job failed because no recordings were found!',
+          service: data.service,
         }),
       );
       return;
@@ -65,6 +66,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
           JSON.stringify(<IngestJobFinishedDto>{
             success: false,
             msg: 'Cannot create event because ACL is not configured!',
+            service: data.service,
           }),
         );
         return;
@@ -96,6 +98,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
           JSON.stringify(<IngestJobFinishedDto>{
             success: false,
             msg: `Ingest job failed because couldn't add any tracks!`,
+            service: data.service,
           }),
         );
         return;
@@ -106,6 +109,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
           success: success,
           eventId: mediaPackageId,
           identifiers: data.identifiers,
+          service: data.service,
         }),
       );
       return;
@@ -114,6 +118,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
         JSON.stringify(<IngestJobFinishedDto>{
           success: false,
           msg: `Ingest job failed with exception ${e}!`,
+          service: data.service,
         }),
       );
       return;

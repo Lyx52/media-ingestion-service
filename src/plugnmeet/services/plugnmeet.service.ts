@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CreateRoomResponse, DeleteRecordingsParams, PlugNmeet } from 'plugnmeet-sdk-js';
+import { ActiveRoomInfo, DeleteRecordingsParams, PlugNmeet } from 'plugnmeet-sdk-js';
 import { MongoRepository } from 'typeorm';
 import { PlugNMeetRoom } from '../entities/PlugNMeetRoom';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { CreateConferenceDto, RoomExtraData } from '../dto/CreateRoomParameters';
+import { RoomExtraData } from '../dto/CreateRoomParameters';
 import {
   OPENCAST_CREATE_DEFAULT_METADATA,
   OPENCAST_INGEST_RECORDINGS,
@@ -37,39 +37,24 @@ export class PlugNMeetService {
     this.recordingLocation = this.config.getOrThrow<string>('plugnmeet.recording_location');
   }
 
-  async createConferenceRoom(payload: CreateConferenceDto): Promise<CreateRoomResponse> {
-    const response = await this.pnmClient.createRoom(payload);
-    if (response.status) {
-      let roomInfo: { sid: string } = response.roomInfo;
-      if (!roomInfo) {
-        const activeRoomRes = await this.pnmClient.getActiveRoomInfo({
-          room_id: payload.room_id,
-        });
-        if (!activeRoomRes.status) {
-          this.logger.error('Could not get room info, ingestion wont be available!');
-          return response;
-        }
-        roomInfo = activeRoomRes.room.room_info;
+  async createActiveRoomFromInfo(roomInfo: ActiveRoomInfo) {
+    const entity = this.roomRepository.create();
+    entity.roomId = roomInfo.room_id;
+    entity.roomSid = roomInfo.sid;
+    entity.title = roomInfo.room_title;
+    entity.started = new Date();
+    entity.ingested = false;
+    try {
+      const metadata: any = JSON.parse(roomInfo.metadata);
+      if (metadata.extra_data) {
+        const extraData: RoomExtraData = JSON.parse(metadata.extra_data);
+        entity.course = extraData.activity.course;
       }
-      const entity = this.roomRepository.create();
-      entity.roomId = payload.room_id;
-      entity.roomSid = roomInfo.sid;
-      entity.title = payload.metadata.room_title;
-      entity.started = new Date();
-      entity.ingested = false;
-      try {
-        if (payload.metadata.extra_data) {
-          const extraData: RoomExtraData = JSON.parse(payload.metadata.extra_data);
-          entity.course = extraData.activity.course;
-        }
-      } catch (e) {
-        this.logger.warn(`Failed to parse course ExtraData when creating PlugNMeet Room ${e}`);
-      }
-
-      await this.roomRepository.insert(entity);
-      this.logger.log(`PlugNMeet room ${entity.roomSid} created!`);
+    } catch (e) {
+      this.logger.warn(`Failed to parse course ExtraData when creating PlugNMeet Room ${e}`);
     }
-    return response;
+    await this.roomRepository.insert(entity);
+    this.logger.log(`PlugNMeet room ${entity.roomSid} created!`);
   }
 
   async ingestPendingRecordings() {
@@ -105,6 +90,11 @@ export class PlugNMeetService {
       const roomRecordings = recordings.result.recordings_list.filter(
         (rec) => rec.room_sid.split('-')[0] === room.roomSid,
       );
+      this.logger.verbose(
+        `Created jobs for PlugNMeet room recordings {${roomRecordings
+          .map((r) => r.record_id)
+          .join(',')}}`,
+      );
       if (roomRecordings.length <= 0) {
         noRecordingIds.push(room.roomSid);
         continue;
@@ -116,6 +106,7 @@ export class PlugNMeetService {
         ),
         eventMetadata: metadata,
         identifiers: room.roomSid,
+        service: PLUG_N_MEET_SERVICE,
       });
     }
     await this.roomRepository.updateMany(
@@ -144,18 +135,37 @@ export class PlugNMeetService {
     return metadata;
   }
 
-  async removeAndUpdateRooms() {
+  async syncActiveRooms() {
     const activeRooms = await this.pnmClient.getActiveRoomsInfo();
     if (!activeRooms.status && activeRooms.rooms === undefined) return;
     const activeIds: string[] = activeRooms.rooms
       .filter((rm) => rm.room_info.is_running)
       .map((rm) => rm.room_info.sid);
 
-    // Update rooms which might have ended
+    // Get all rooms that are active
+    const rooms = await this.roomRepository.find({
+      where: {
+        roomSid: { $in: activeIds },
+      },
+    });
+    const activeExistingSids = rooms.map((r) => r.roomSid);
+
+    // First update any rooms that were active but are no longer
     await this.roomRepository.updateMany(
-      { roomSid: { $nin: activeIds }, ended: { $exists: false } },
+      {
+        roomSid: { $nin: activeExistingSids },
+      },
       { $set: { ended: new Date() } },
     );
+
+    // Create all rooms that don't exist
+    const newRooms = activeRooms.rooms.filter(
+      (r) => !activeExistingSids.some((sid) => sid === r.room_info.sid),
+    );
+    await Promise.all(newRooms.map((r) => this.createActiveRoomFromInfo(r.room_info)));
+  }
+
+  async deleteOldRooms() {
     const rooms = await this.roomRepository.find({
       where: {
         ended: { $exists: true },
@@ -169,24 +179,25 @@ export class PlugNMeetService {
       room_ids: roomIds,
     });
     if (recordings.status) {
-      const recordingIds = recordings.result.recordings_list.map(
-        (rec) =>
-          <DeleteRecordingsParams>{
-            record_id: rec.record_id,
-          },
+      const recordingIds = recordings.result.recordings_list.map((rec) => rec.record_id);
+      this.logger.log(`PlugNMeet room recordings {${recordingIds.join(',')}} deleted!`);
+      await Promise.all(
+        recordingIds.map((id) =>
+          this.pnmClient.deleteRecordings(<DeleteRecordingsParams>{
+            record_id: id,
+          }),
+        ),
       );
-      await Promise.all(recordingIds.map((params) => this.pnmClient.deleteRecordings(params)));
     }
-
-    // Delete any rooms that are already ended AND ingested
+    const roomSids = rooms.map((r) => r.roomSid);
+    this.logger.log(`PlugNMeet rooms {${roomSids.join(',')}} deleted!`);
     await this.roomRepository.deleteMany({
-      ended: { $exists: true },
-      ingested: true,
+      roomSid: { $in: roomSids },
     });
   }
 
   async ingestJobFinished(data: IngestJobFinishedDto): Promise<void> {
-    if (data.identifiers) {
+    if (data.identifiers && data.service === PLUG_N_MEET_SERVICE) {
       await this.roomRepository.updateMany(
         {
           roomSid: data.identifiers,

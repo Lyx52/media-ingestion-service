@@ -4,7 +4,7 @@ import { INGEST_RECORDINGS_JOB_FINISHED } from '../app.constants';
 import { IngestJobFinishedDto } from '../common/dto/IngestJobFinishedDto';
 import { EpiphanService } from './services/epiphan.service';
 
-@Controller('epiphan')
+@Controller()
 export class EpiphanController {
   private readonly logger: Logger = new Logger(EpiphanController.name);
   constructor(private readonly epiphanService: EpiphanService) {}

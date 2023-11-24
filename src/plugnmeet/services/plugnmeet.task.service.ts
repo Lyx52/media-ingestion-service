@@ -12,10 +12,12 @@ export class PlugNMeetTaskService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.cleanupOldRooms();
+    await this.deleteOldRooms();
+    await this.syncRooms();
     await this.ingestPending();
   }
-  @Cron(CronExpression.EVERY_30_SECONDS)
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async ingestPending() {
     try {
       await this.conferenceService.ingestPendingRecordings();
@@ -23,12 +25,20 @@ export class PlugNMeetTaskService implements OnModuleInit {
       this.logger.verbose(`Caught exception while ingesting recordings ${e}`);
     }
   }
-  @Cron(CronExpression.EVERY_30_SECONDS)
-  async cleanupOldRooms() {
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async syncRooms() {
     try {
-      await this.conferenceService.removeAndUpdateRooms();
+      await this.conferenceService.syncActiveRooms();
     } catch (e) {
-      this.logger.verbose(`Caught exception while syncing conference rooms ${e}`);
+      this.logger.verbose(`Caught exception while cleaning up old conference rooms ${e}`);
+    }
+  }
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  async deleteOldRooms() {
+    try {
+      await this.conferenceService.deleteOldRooms();
+    } catch (e) {
+      this.logger.verbose(`Caught exception while deleting old PlugNMeet rooms ${e}`);
     }
   }
 }

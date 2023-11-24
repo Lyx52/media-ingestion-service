@@ -46,7 +46,7 @@ export class EpiphanService implements OnModuleInit {
   }
 
   async ingestJobFinished(data: IngestJobFinishedDto): Promise<void> {
-    if (data.identifiers.device && data.identifiers.fileName) {
+    if (data.identifiers.device && data.identifiers.fileName && data.service === EPIPHAN_SERVICE) {
       const workDir = path.resolve(this.workdirLocation, data.identifiers.device);
       const filePath = path.resolve(workDir, data.identifiers.fileName);
       if (fs.existsSync(workDir) && fs.existsSync(filePath)) {
@@ -124,6 +124,7 @@ export class EpiphanService implements OnModuleInit {
           recordings: [filePath],
           eventMetadata: metadata,
           identifiers: { fileName: fileName, device: device },
+          service: EPIPHAN_SERVICE,
         });
       }
     }

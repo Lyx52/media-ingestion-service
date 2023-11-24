@@ -6,7 +6,7 @@ import { OPENCAST_CREATE_DEFAULT_METADATA, OPENCAST_INGEST_RECORDINGS } from '..
 import { IngestRecordingJobDto } from '../common/dto/IngestRecordingJobDto';
 import { CreateDefaultEventMetadataDto } from '../common/dto/CreateDefaultEventMetadataDto';
 
-@Controller('opencast')
+@Controller()
 export class OpencastController {
   private readonly logger: Logger = new Logger(OpencastController.name);
   constructor(private readonly opencastService: OpencastService) {}

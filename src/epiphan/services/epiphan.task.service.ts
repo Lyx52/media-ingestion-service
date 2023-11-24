@@ -16,7 +16,7 @@ export class EpiphanTaskService implements OnModuleInit {
     await this.ingestPending();
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async ingestPending() {
     try {
       await this.epiphanService.ingestPendingRecordings();

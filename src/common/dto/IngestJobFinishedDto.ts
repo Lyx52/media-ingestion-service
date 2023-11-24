@@ -3,4 +3,5 @@ export class IngestJobFinishedDto {
   msg?: string;
   identifiers?: any;
   success: boolean;
+  service: string;
 }
