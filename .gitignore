@@ -3,6 +3,8 @@
 /node_modules
 /archive
 /workdir
+/recordings
+/recordings_epiphan
 # Logs
 logs
 *.log

@@ -5,3 +5,15 @@ services:
     restart: always
     ports:
       - "27017:27017"
+  webapi:
+    container_name: 'media-ingestion-service'
+    restart: always
+    #tty: true
+    build: .
+    volumes:
+      - ./recordings:/app/recordings
+      - ./recordings_epiphan:/app/recordings_epiphan
+      - ./archive:/app/archive
+      - ./workdir:/app/workdir
+      - ./config.yaml:/app/config.yaml:ro
+    network_mode: "host"
