@@ -46,7 +46,8 @@ export class EpiphanService implements OnModuleInit {
   }
 
   async ingestJobFinished(data: IngestJobFinishedDto): Promise<void> {
-    if (data.identifiers.device && data.identifiers.fileName && data.service === EPIPHAN_SERVICE) {
+    if (data.service !== EPIPHAN_SERVICE) return;
+    if (data.identifiers.device && data.identifiers.fileName) {
       const workDir = path.resolve(this.workdirLocation, data.identifiers.device);
       const filePath = path.resolve(workDir, data.identifiers.fileName);
       if (fs.existsSync(workDir) && fs.existsSync(filePath)) {

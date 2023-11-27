@@ -18,12 +18,4 @@ export class PlugNMeetController {
     }
     this.logger.error(`Ingest job failed with message: '${data.msg}'`);
   }
-  @Post('/webhook')
-  async processWebhook(@Payload() payload: any) {
-    this.logger.debug(payload);
-  }
-  @Get('/webhook')
-  async processGetWebhook(@Payload() payload: any) {
-    this.logger.debug(payload);
-  }
 }

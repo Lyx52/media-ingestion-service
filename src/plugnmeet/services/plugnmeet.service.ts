@@ -197,7 +197,8 @@ export class PlugNMeetService {
   }
 
   async ingestJobFinished(data: IngestJobFinishedDto): Promise<void> {
-    if (data.identifiers && data.service === PLUG_N_MEET_SERVICE) {
+    if (data.service !== PLUG_N_MEET_SERVICE) return;
+    if (data.identifiers) {
       await this.roomRepository.updateMany(
         {
           roomSid: data.identifiers,
