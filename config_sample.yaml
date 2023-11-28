@@ -7,11 +7,14 @@ epiphan:
   workdir_location: './workdir'
   archive_location: './archive'
   series_name: 'Epiphan recordings'
+  eventTemplate: 'EPIPHAN_EVENT_TEMPLATEs'
 plugnmeet:
   host: PLUG_N_MEET_SERVER_DOMAIN
   key: PLUG_N_MEET_API_KEY
   secret: PLUG_N_MEET_SECRET
   recording_location: PLUG_N_MEET_RECORDING_LOCATION
+  series_name: 'PlugNMeet recordings'
+  eventTemplate: 'PLUGNMEET_EVENT_TEMPLATE'
 redis:
   host: REDIS_HOST
   port: REDIS_PORT
@@ -22,42 +25,53 @@ opencast:
   host: OPENCAST_HOSTNAME
   username: OPENCAST_USERNAME
   password: OPENCAST_PASSWORD
-  default_series: PlugNMeet recordings
-  # Copies most of the metadata from series rather than predefined metadata below
-  copy_metadata_from_series: true
-  default_acl: public
-  create_without_series: true
-  event_title_prefix: PlugNMeet recording
-  metadata: {
-    license: 'ALL RIGHTS RESERVED',
-    # This corresponds to Opencast language list entry
-    language: 'en',
-    publishers: [ 'PlugNMeet recorder' ],
-    description: "This is the default description of PlugNMeet recording",
-    location: "PlugNMeet conference",
-    creators: [ "PlugNMeet" ],
-    rights: "",
-    contributors: [ ],
-    subjects: [ ]
-  }
-  # Custom ACL configuration that will be ingested with the event for more information https://docs.opencast.org/r/14.x/developer/#api/types/#acl
-  custom_acl_config: [
+  metadata_templates: [
     {
-      "action": "write",
-      "role": "ROLE_ADMIN"
+      name: 'EPIPHAN_EVENT_TEMPLATE',
+      license: 'ALL RIGHTS RESERVED',
+      # This corresponds to Opencast language list entry
+      language: 'en',
+      publishers: [ 'Epiphan recorder' ],
+      description: "This is the default description of Epiphan recording",
+      location: "Epiphan recorder",
+      creators: [ "Epiphan recorder" ],
+      rights: "",
+      contributors: [ ],
+      subjects: [ ]
     },
     {
-      "action": "read",
-      "role": "ROLE_USER"
+      name: 'PLUGNMEET_EVENT_TEMPLATE',
+      license: 'ALL RIGHTS RESERVED',
+      # This corresponds to Opencast language list entry
+      language: 'en-US',
+      publishers: [ 'PlugNMeet recorder' ],
+      description: "This is the default description of PlugNMeet recording",
+      location: "PlugNMeet conference",
+      creators: [ "PlugNMeet" ],
+      rights: "",
+      contributors: [ ],
+      subjects: [ ]
     }
   ]
-  use_custom_acl_config: true
+  default_acl: public
+  # Custom ACL configuration that will be ingested with the event for more information https://docs.opencast.org/r/14.x/developer/#api/types/#acl
+  custom_acl_config: [
+#    {
+#      "action": "write",
+#      "role": "ROLE_ADMIN"
+#    },
+#    {
+#      "action": "read",
+#      "role": "ROLE_USER"
+#    }
+  ]
+  # Workflow when processing multiple videos
+  workflow_multiple: 'lbtu-wf-schedule-and-upload'
+  # Workflow when processing a single video
+  workflow_single: 'schedule-and-upload'
   # IMPORTANT: Currently it seems opencast has a bug where it doesn't properly parse json values so all configuration params need to be strings
-  processing_config: {
-    workflow: 'schedule-and-upload',
-    configuration: {
-      'straightToPublishing': 'true'
-    }
+  workflow_configuration: {
+    'straightToPublishing': 'true'
   }
 mongodb:
   host: MONGODB_HOST

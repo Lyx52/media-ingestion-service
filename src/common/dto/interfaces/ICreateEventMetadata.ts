@@ -1,5 +1,3 @@
-import { IProcessingConfiguration } from './IProcessingConfiguration';
-
 export interface ICreateEventMetadata {
   title: string;
   subjects: string[];
@@ -14,5 +12,4 @@ export interface ICreateEventMetadata {
   publishers: string[];
   started: Date;
   ended: Date;
-  processing: IProcessingConfiguration;
 }

@@ -8,7 +8,7 @@ services:
   webapi:
     container_name: 'media-ingestion-service'
     restart: always
-    #tty: true
+    #tty: truex 
     build: .
     volumes:
       - ./recordings:/app/recordings

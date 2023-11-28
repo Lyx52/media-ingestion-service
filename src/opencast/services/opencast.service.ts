@@ -13,6 +13,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { IngestJobFinishedDto } from '../../common/dto/IngestJobFinishedDto';
 import { CreateDefaultEventMetadataDto } from '../../common/dto/CreateDefaultEventMetadataDto';
 import { ICreateEventMetadata } from '../../common/dto/interfaces/ICreateEventMetadata';
+import { meta } from 'eslint-plugin-prettier';
+import { concatDefinedArrays } from '../../common/utils';
 
 @Injectable()
 export class OpencastService implements OnModuleInit {
@@ -33,34 +35,34 @@ export class OpencastService implements OnModuleInit {
     this.logger.log('Adding INGEST_RECORDING_JOB to job queue.');
     await this.ingestQueue.add(INGEST_RECORDING_JOB, data);
   }
-
+  private getMetadataTemplate(templateName: string) {
+    const { metadata_templates } = this.opencastConfig;
+    const result = metadata_templates.filter((template) => template.name === templateName);
+    return result.length > 0 ? result[0] : undefined;
+  }
   async createDefaultEventMetadata(
     data: CreateDefaultEventMetadataDto,
   ): Promise<ICreateEventMetadata> {
-    const { metadata, processing_config, default_acl, default_series } = this.opencastConfig;
+    const { default_series } = this.opencastConfig;
 
     const series = await this.opencastApi.getSeries(data.seriesName || default_series);
-    return {
+    const metadata = this.getMetadataTemplate(data.templateName);
+    if (!metadata) throw Error(`Unknown event template ${data.templateName}!`);
+    return <ICreateEventMetadata>{
       location: metadata.location,
-      aclName: default_acl,
-      contributors: series?.contributors
-        ? metadata.contributors.concat(series.contributors)
-        : metadata.contributors,
-      creators: series?.creators ? metadata.creators.concat(series.creators) : metadata.creators,
+      contributors: concatDefinedArrays(series?.contributors, metadata.contributors),
+      creators: concatDefinedArrays(series?.creators, metadata.creators),
       description: metadata.description,
       lang: series?.language,
       license: series?.license,
-      processing: processing_config,
-      publishers: series?.publishers
-        ? metadata.publishers.concat(series.publishers)
-        : metadata.publishers,
+      publishers: concatDefinedArrays(series?.publishers, metadata.publishers),
       rights: metadata.rights,
       seriesId: series?.identifier || '',
       started: data.started,
       ended: data.ended || new Date(),
-      subjects: series?.subjects ? metadata.subjects.concat(series.subjects) : metadata.subjects,
+      subjects: concatDefinedArrays(series?.subjects, metadata.subjects),
       title: data.title,
-    } as ICreateEventMetadata;
+    };
   }
 
   async jobFinished(data: IngestJobFinishedDto): Promise<void> {

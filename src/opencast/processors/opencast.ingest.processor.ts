@@ -4,17 +4,17 @@ import { Job } from 'bull';
 import { INGEST_RECORDING_JOB } from '../../app.constants';
 import { IngestRecordingJobDto } from '../../common/dto/IngestRecordingJobDto';
 import { OpencastApiService } from '../services/opencast.api.service';
-import { generateAclXML, generateEpisodeCatalogXML, getMediaPackageId } from '../../common/utils';
 import { ConfigService } from '@nestjs/config';
 import { IngestJobFinishedDto } from '../../common/dto/IngestJobFinishedDto';
-import { IProcessingConfiguration } from '../../common/dto/interfaces/IProcessingConfiguration';
 import * as fs from 'fs';
 import { OpencastService } from '../services/opencast.service';
 @Processor('video')
 export class OpencastVideoIngestConsumer implements OnModuleInit {
   private readonly defaultAclName?: string;
   private readonly customAclConfig?: any[];
-  private readonly workflowConfig: IProcessingConfiguration;
+  private readonly workflowConfig: any;
+  private readonly workflowSingle: string;
+  private readonly workflowMultiple: string;
   private readonly logger: Logger = new Logger(OpencastVideoIngestConsumer.name);
   async onModuleInit() {}
   constructor(
@@ -24,9 +24,9 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
   ) {
     this.defaultAclName = this.config.get<string>('opencast.default_acl');
     this.customAclConfig = this.config.get<any[]>('opencast.custom_acl_config');
-    this.workflowConfig = this.config.getOrThrow<IProcessingConfiguration>(
-      'opencast.processing_config',
-    );
+    this.workflowConfig = this.config.getOrThrow<any>('opencast.workflow_configuration');
+    this.workflowSingle = this.config.getOrThrow<string>('opencast.workflow_single');
+    this.workflowMultiple = this.config.getOrThrow<string>('opencast.workflow_multiple');
   }
   @Process(INGEST_RECORDING_JOB)
   async ingestMediaPackage(job: Job<IngestRecordingJobDto>) {
@@ -43,71 +43,31 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
       return;
     }
     try {
-      let mediaPackage = await this.opencastApi.createMediaPackage();
-
-      // Add episode DublinCore metadata
-      const dcCatalogXML = generateEpisodeCatalogXML(data.eventMetadata);
-      mediaPackage = await this.opencastApi.addDCCatalog(
-        mediaPackage,
-        dcCatalogXML,
-        'dublincore/episode',
-      );
-
-      // Add episode ACLs
-      const mediaPackageId = getMediaPackageId(mediaPackage);
-      let aclXML = '';
-      if (this.customAclConfig && this.customAclConfig.length > 0) {
-        aclXML = generateAclXML(this.customAclConfig, mediaPackageId);
-      } else if (this.defaultAclName) {
-        const aclTemplate = await this.opencastApi.getAccessListTemplate(this.defaultAclName);
-        aclXML = generateAclXML(aclTemplate.acl.ace, mediaPackageId);
-      } else {
-        await job.moveToCompleted(
-          JSON.stringify(<IngestJobFinishedDto>{
-            success: false,
-            msg: 'Cannot create event because ACL is not configured!',
-            service: data.service,
-          }),
+      const event = await this.opencastApi
+        .createNewEvent()
+        .createMediaPackage()
+        .then((e) => e.addEventMetadata(data.eventMetadata))
+        .then((e) =>
+          this.customAclConfig && this.customAclConfig.length > 0
+            ? e.addAclFromRoles(this.customAclConfig)
+            : e.addAclFromName(this.defaultAclName),
         );
-        return;
-      }
-
-      mediaPackage = await this.opencastApi.addAttachment(
-        mediaPackage,
-        aclXML,
-        'security/xacml+episode',
-      );
 
       // NOTE: Video source service is responsible for sorting recordings
-      let totalIngested = 0;
-      for (let i = 0; i < data.recordings.length; i++) {
-        const recording = data.recordings[i];
+      for (const recording of data.recordings) {
         if (fs.existsSync(recording)) {
-          mediaPackage = await this.opencastApi.addTrack(
-            mediaPackage,
-            recording,
-            `presentation-${i}/source`,
-          );
-          totalIngested++;
+          event.addTrack(recording);
         } else {
-          this.logger.warn(`Failed to ingest recording, videofile ${recording} does not exist!`);
+          this.logger.warn(`Video file ${recording} does not exist!`);
         }
       }
-      if (totalIngested <= 0) {
-        await job.moveToCompleted(
-          JSON.stringify(<IngestJobFinishedDto>{
-            success: false,
-            msg: `Ingest job failed because couldn't add any tracks!`,
-            service: data.service,
-          }),
-        );
-        return;
-      }
-      const success = await this.opencastApi.ingest(mediaPackage, this.workflowConfig.workflow);
+
+      const workflow = data.recordings.length > 1 ? this.workflowMultiple : this.workflowSingle;
+      const success = await event.ingest(workflow);
       await job.moveToCompleted(
         JSON.stringify(<IngestJobFinishedDto>{
           success: success,
-          eventId: mediaPackageId,
+          eventId: event.eventId,
           identifiers: data.identifiers,
           service: data.service,
         }),
@@ -117,7 +77,7 @@ export class OpencastVideoIngestConsumer implements OnModuleInit {
       await job.moveToCompleted(
         JSON.stringify(<IngestJobFinishedDto>{
           success: false,
-          msg: `Ingest job failed with exception ${e}!`,
+          msg: e,
           service: data.service,
         }),
       );

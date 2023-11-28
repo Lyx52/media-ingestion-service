@@ -2,6 +2,15 @@ import { create } from 'xmlbuilder2';
 import { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 import { NamedNodeMap } from '@oozcitak/dom/lib/dom/interfaces';
 import { ICreateEventMetadata } from './dto/interfaces/ICreateEventMetadata';
+export const concatDefinedArrays = (...arrays: any[]): any[] => {
+  let result = [];
+  arrays
+    .filter((arr) => arr && Array.isArray(arr))
+    .forEach((arr) => {
+      result = result.concat(arr);
+    });
+  return result;
+};
 export const generateEventMetadataJson = (data: ICreateEventMetadata): any => {
   return [
     {

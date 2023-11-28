@@ -22,6 +22,7 @@ export class EpiphanService implements OnModuleInit {
   private readonly workdirLocation: string;
   private readonly archiveLocation: string;
   private readonly seriesName: string;
+  private readonly templateName: string;
   constructor(
     private readonly config: ConfigService,
     @Inject(EPIPHAN_SERVICE) private readonly client: ClientProxy,
@@ -32,6 +33,7 @@ export class EpiphanService implements OnModuleInit {
       this.config.getOrThrow<string>('epiphan.recording_location'),
     );
     this.seriesName = this.config.getOrThrow<string>('epiphan.series_name');
+    this.templateName = this.config.getOrThrow<string>('plugnmeet.eventTemplate');
   }
   async onModuleInit() {
     if (!fs.existsSync(this.recordingLocation)) {
@@ -71,6 +73,7 @@ export class EpiphanService implements OnModuleInit {
       this.client.send<ICreateEventMetadata, CreateDefaultEventMetadataDto>(
         OPENCAST_CREATE_DEFAULT_METADATA,
         {
+          templateName: this.templateName,
           started: started,
           ended: ended,
           title: `Epiphan recording (${started.getDate()}.${started.getMonth()}.${started.getFullYear()})`,

@@ -7,6 +7,7 @@ import { AttachmentType } from '../dto/enums/AttachmentType';
 import { File, FormData } from 'formdata-node';
 import { FormDataEncoder } from 'form-data-encoder';
 import { fileFromPath } from 'formdata-node/file-from-path';
+import { Event } from "../dto/Event";
 @Injectable()
 export class OpencastApiService implements OnModuleInit {
   private readonly logger: Logger = new Logger(OpencastApiService.name);
@@ -21,6 +22,9 @@ export class OpencastApiService implements OnModuleInit {
     this.host = this.config.getOrThrow<string>('opencast.host');
     this.password = this.config.getOrThrow<string>('opencast.password');
     this.username = this.config.getOrThrow<string>('opencast.username');
+  }
+  public createNewEvent(): Event {
+    return new Event(this);
   }
 
   async onModuleInit() {}

@@ -23,6 +23,8 @@ export class PlugNMeetService {
   private readonly logger = new Logger(PlugNMeetService.name);
   private readonly pnmClient: PlugNmeet;
   private readonly recordingLocation: string;
+  private readonly seriesName: string;
+  private readonly templateName: string;
   constructor(
     @InjectRepository(PlugNMeetRoom)
     private readonly roomRepository: MongoRepository<PlugNMeetRoom>,
@@ -35,6 +37,8 @@ export class PlugNMeetService {
       this.config.getOrThrow<string>('plugnmeet.secret'),
     );
     this.recordingLocation = this.config.getOrThrow<string>('plugnmeet.recording_location');
+    this.seriesName = this.config.getOrThrow<string>('plugnmeet.series_name');
+    this.templateName = this.config.getOrThrow<string>('plugnmeet.eventTemplate');
   }
 
   async createActiveRoomFromInfo(roomInfo: ActiveRoomInfo) {
@@ -124,10 +128,11 @@ export class PlugNMeetService {
       this.client.send<ICreateEventMetadata, CreateDefaultEventMetadataDto>(
         OPENCAST_CREATE_DEFAULT_METADATA,
         {
+          templateName: this.templateName,
           started: room.started,
           ended: room.ended,
           title: `PlugNMeet recording ${room.title}`,
-          seriesName: room.course ? `Course_Series_${room.course}` : undefined,
+          seriesName: room.course ? `Course_Series_${room.course}` : this.seriesName,
         },
       ),
     );
