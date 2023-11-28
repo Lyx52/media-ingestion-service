@@ -113,12 +113,14 @@ export class EpiphanService implements OnModuleInit {
         await fsAsync.mkdir(deviceWorkdir);
       }
       await Promise.all(
-        videoFiles.map((vf) => {
-          return fse.move(
-            path.resolve(deviceRecordingLocation, vf),
-            path.resolve(deviceWorkdir, vf),
-          );
-        }),
+        videoFiles
+          .filter((vf) => vf.toLowerCase().endsWith('.mp4'))
+          .map((vf) => {
+            return fse.move(
+              path.resolve(deviceRecordingLocation, vf),
+              path.resolve(deviceWorkdir, vf),
+            );
+          }),
       );
       for (const fileName of videoFiles) {
         const filePath = path.resolve(deviceWorkdir, fileName);
