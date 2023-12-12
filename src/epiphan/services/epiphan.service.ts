@@ -107,7 +107,12 @@ export class EpiphanService implements OnModuleInit {
     const devices: string[] = await fsAsync.readdir(this.recordingLocation);
     for (const device of devices) {
       const deviceRecordingLocation = path.resolve(this.recordingLocation, device);
-      const videoFiles = await fsAsync.readdir(deviceRecordingLocation);
+      let videoFiles = await fsAsync.readdir(deviceRecordingLocation);
+      videoFiles = videoFiles.filter(async (vf) => {
+        const stats = await fsAsync.stat(path.resolve(deviceRecordingLocation, vf));
+        return Date.now() - stats.ctime.getTime() > 1000 * 60 * 15;
+      });
+
       const deviceWorkdir = path.resolve(this.workdirLocation, device);
       if (!fs.existsSync(deviceWorkdir)) {
         await fsAsync.mkdir(deviceWorkdir);
